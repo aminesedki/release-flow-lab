@@ -1,0 +1,27 @@
+name: Deploy to one environment
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build --build-arg APP_VERSION="${{ inputs.version }}" -t "lab:${{ inputs.version }}" .
+      - name: Smoke test
+        run: |
+          docker run -d --name app -p 8000:8000 "lab:${{ inputs.version }}"
+          for i in $(seq 20); do curl -fsS localhost:8000/version && exit 0; sleep 1; done
+          docker logs app; exit 1
+      - name: Deploy (simulated)
+        run: echo "### ${{ inputs.version }} deployed to ${{ inputs.env }}" >> "$GITHUB_STEP_SUMMARY"

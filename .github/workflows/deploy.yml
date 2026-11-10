@@ -1,0 +1,91 @@
+name: Deploy
+
+on:
+  push:
+    branches: [develop]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'   # rc    -> qa
+      - 'v[0-9]+.[0-9]+.[0-9]+'             # final -> n
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      kind: ${{ steps.plan.outputs.kind }}
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch tags as they are on GitHub
+        run: git fetch --force --tags
+      - id: plan
+        name: Decide what this push deploys
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          if [[ $REF_TYPE == branch ]]; then
+            echo "kind=dev" >> "$GITHUB_OUTPUT"
+            echo "version=0.0.0-dev.${sha::7}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ $(git cat-file -t "refs/tags/$REF_NAME") == tag ]] \
+            || { echo "::error::$REF_NAME must be an annit 1; }
+          if [[ $REF_NAME == *-rc.* ]]; then
+            git branch -r --contains "$sha" | grep -qE ']+|hotfix/[0-9]+\.[0-9]+\.[0-9]+)$' \
+              || { echo "::error::$REF_NAME is not on a release/ or hotfix/ branch"; exit 1; }
+            echo "kind=rc" >> "$GITHUB_OUTPUT"
+          else
+            git tag --points-at "$sha" | grep -q "^${REF_NAME}-rc\.[0-9]*$" \
+              || { echo "::error::$REF_NAME must sit on the commit of a ${REF_NAME}-rc.N tag"; exit 1; }
+            echo "kind=final" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=${REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+  tests:
+    needs: plan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pytest -q
+
+  dv:
+    needs: [plan, tests]
+    if: needs.plan.outputs.kind == 'dev'
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      env: dv
+      version: ${{ needs.plan.outputs.version }}
+
+  qa:
+    needs: [plan, tests]
+    if: needs.plan.outputs.kind == 'rc'
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      env: qa
+      version: ${{ needs.plan.outputs.version }}
+
+  np:
+    needs: [plan, tests]
+    if: needs.plan.outputs.kind == 'final'
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      env: np
+      version: ${{ needs.plan.outputs.version }}
+
+  prod:
+    needs: [plan, np]
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      env: prod
+      version: ${{ needs.plan.outputs.version }}

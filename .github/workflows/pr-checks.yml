@@ -1,0 +1,65 @@
+name: PR checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  branch-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name and merge direction
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          slug='([A-Z]+[0-9]+-)?[a-z0-9]+(-[a-z0-9]+)*'
+          work="^(feat|fix|chore|refactor|perf|docs|ci|test|build)/${slug}$"
+          bugfix="^bugfix/${slug}$"
+          release='^release/[0-9]+\.[0-9]+$'
+          hotfix='^hotfix/[0-9]+\.[0-9]+\.[0-9]+$'
+
+            if [[ $BASE_REF == develop ]]; then
+              [[ $HEAD_REF =~ $work || $HEAD_REF == dependabot/* ]] && { echo "work -> develop (squash)"; exit 0; }
+              [[ $HEAD_REF =~ $release || $HEAD_REF =~ $he -> develop (merge commit)"; exit 0; }
+              [[ $HEAD_REF =~ ^bugfix/ ]] && refuse "a bug on develop is a fix/* branch; bugfix/ is for release and hotfix branches"
+              refuse "branch name does not follow the nam
+            elif [[ $BASE_REF =~ $release || $BASE_REF =~ $hotfix ]]; then
+              [[ $HEAD_REF =~ $bugfix ]] && { echo "bugfit 0; }
+              [[ $HEAD_REF == develop ]] && refuse "would pull unreleased work into the version being tested"
+              [[ $HEAD_REF =~ ^(feat|fix)/ ]] && refuse "only (bugfix/*); the feature waits for the next cut"
+              refuse "only bugfix/* branches merge into $BASE_REF"
+            else
+              refuse "PRs only target develop, release/X.
+            fi
+
+    pr-title:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Check Conventional Commits title
+          env:
+            TITLE: ${{ github.event.pull_request.title }}
+            HEAD_REF: ${{ github.head_ref }}
+          run: |
+            if [[ $HEAD_REF =~ ^(release|hotfix)/ ]]; the
+              echo "Back-merge: title not checked"; exit 0
+            fi
+            re='^(feat|fix|perf|refactor|chore|ci|docs|te .+'
+            if [[ ! $TITLE =~ $re ]]; then
+              echo "::error::PR title must look like 'feat(scope): summary', got: $TITLE"
+              exit 1
+            fi
+
+    tests:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: astral-sh/setup-uv@v6
+          with:
+            enable-cache: true
+        - run: uv sync --locked
+        - run: uv run pytest -q
