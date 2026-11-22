@@ -9,6 +9,7 @@
 
 options:
   substitution_option: ALLOW_LOOSE
+  default_logs_bucket_behavior: REGIONAL_USER_OWNED_BUCKET
 
 steps:
   - name: gcr.io/cloud-builders/docker
