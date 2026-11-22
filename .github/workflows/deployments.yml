@@ -49,7 +49,7 @@ jobs:
             echo "deployment already exists for $ENV_NAME/$SHA"; exit 0
           fi
           did=$(gh api "repos/${GITHUB_REPOSITORY}/deployments" \
-            -f ref=$SHA -f environment=$ENV_NAME -f auto_merge=false \
+            -F ref=$SHA -F environment=$ENV_NAME -F auto_merge=false \
             -f description="Cloud Build deploy to $ENV_NAME" --jq '.id')
           gh api "repos/${GITHUB_REPOSITORY}/deployments/$did/statuses" \
             -f state=in_progress -f description="Cloud Build running"
