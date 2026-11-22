@@ -7,9 +7,11 @@
 #   - push on a release branch -> 0.0.0-dev.<short-sha>
 #   - push of a tag vMAJOR.MINOR.PATCH -> MAJOR.MINOR.PATCH
 
+logsBucket: '${_LOGS_BUCKET}'
+
 options:
   substitution_option: ALLOW_LOOSE
-  default_logs_bucket_behavior: REGIONAL_USER_OWNED_BUCKET
+  logging: GCS_ONLY
 
 steps:
   - name: gcr.io/cloud-builders/docker
