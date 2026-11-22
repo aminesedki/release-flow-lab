@@ -76,7 +76,7 @@ jobs:
           url=${!url_var}
           state=success
           [[ $CONCLUSION == success ]] || state=failure
-          did=$(gh api "repos/${GITHUB_REPOSITORY}/deployments?sha=$CHECK_SHA&environment=$env" --jq '.[0].id' || true)
+          did=$(gh api "repos/${GITHUB_REPOSITORY}/deployments?sha=$CHECK_SHA&environment=$env" --jq '.[0].id // empty' || true)
           if [[ -z $did ]]; then
             echo "no deployment found for $env/$CHECK_SHA"; exit 0
           fi
