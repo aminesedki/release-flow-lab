@@ -16,3 +16,5 @@ gcloud run deploy "$_SERVICE" \
   --service-account "$_RUNTIME_SA" \
   --allow-unauthenticated \
   --quiet
+
+bash "$(dirname "$0")/cb-smoke.sh" "$_PROJECT" "$_REGION" "$_SERVICE"
