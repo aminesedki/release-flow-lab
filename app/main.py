@@ -12,7 +12,7 @@ def health() -> dict:
 
 @app.get("/greeting")
 def greeting() -> dict:
-    return {"greeting": "hello from release-flow-lab"}
+    return {"greeting": "hello from release-flow-lab", "version": os.getenv("APP_VERSION", "local")}
 
 
 @app.get("/version")
