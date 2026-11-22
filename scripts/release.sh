@@ -3,7 +3,7 @@
 # CHANGELOG.md + pyproject.toml, tag vX.Y.Z on main, push, create the
 # GitHub Release.
 #
-# Usage: ./scripts/release.sh [VERSION]
+# Usage: ./scripts/release.sh [--dry-run] [VERSION]
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -30,7 +30,7 @@ commits=$(git log --pretty=format:'%s' $range)
 [[ -n $commits ]] || { echo "error: nothing to release since ${last:-beginning}"; exit 1; }
 
 # --- compute next version ---------------------------------------------------------
-breaking=$(echo "$commits" | grep -cE '^[a-z]+(\(.+\))?!:|BREAKING CHANGE' || true)
+breaking=$(git log --format=%B $range | grep -cE '^[a-z]+(\(.+\))?!:|BREAKING CHANGE' || true)
 feat=$(echo "$commits" | grep -cE '^feat(\(.+\))?:' || true)
 
 if [[ -z ${1:-} ]]; then
@@ -77,6 +77,14 @@ notes_file=$(mktemp)
   section "Changed" ""
 } > "$notes_file"
 
+if (( DRY_RUN )); then
+  echo "--- DRY RUN: would release $tag with this changelog section ---"
+  cat "$notes_file"
+  echo "--- DRY RUN: no files changed, no tag created ---"
+  rm -f "$notes_file"
+  exit 0
+fi
+
 # --- update files -------------------------------------------------------------------
 sed -i "s/^version = \".*\"/version = \"$version\"/" pyproject.toml
 
@@ -99,15 +107,6 @@ changelog=$(mktemp)
   fi
 } > "$changelog"
 mv "$changelog" CHANGELOG.md
-
-if (( DRY_RUN )); then
-  echo "--- DRY RUN: would release $tag with this changelog section ---"
-  cat "$notes_file"
-  echo "--- DRY RUN: no files changed, no tag created ---"
-  rm -f "$notes_file" "$changelog" 2>/dev/null || true
-  git checkout -- CHANGELOG.md pyproject.toml 2>/dev/null || true
-  exit 0
-fi
 
 git add CHANGELOG.md pyproject.toml uv.lock
 git commit -m "chore(release): $tag"
