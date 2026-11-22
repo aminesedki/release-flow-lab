@@ -4,7 +4,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    target-branch: develop
+    target-branch: rc/dv
     commit-message:
       prefix: chore
       include: scope
