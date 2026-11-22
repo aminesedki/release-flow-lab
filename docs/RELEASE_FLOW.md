@@ -5,6 +5,41 @@ feat/*, fix/*, docs/*, chore/*, ... ─PR→ rc/dv ─PR→ rc/qa ─PR→ rc/np
         (deploy dv via Cloud Build)   (qa)     (np)      (pd + tags)
 ```
 
+## Build once, promote the image
+
+The dv build is the only image build in the promote chain. When `rc/qa` or
+`rc/np` is pushed, the Cloud Build trigger runs `cloudbuild-promote.yaml`
+(`scripts/cb-promote.sh`): it reads the image **currently serving the previous
+environment** and deploys that exact image, without rebuilding. Promotions
+always carry the validated artifact, and every deploy ends with a smoke test
+(`scripts/cb-smoke.sh`: `/health` must return `status: ok`, `/version` a
+non-empty version; a failure reddens the commit check).
+
+Production releases still rebuild from the tag source with `APP_VERSION=X.Y.Z`
+baked in (same code, version metadata only).
+
+## Monitoring
+
+Each environment has a Cloud Monitoring uptime check on `/health` (60 s
+interval, 3 regions) and an email alert when the check fails for 5 minutes.
+Pushing images automatically enables Artifact Analysis vulnerability scanning
+(`containerscanning` API).
+
+Note: on freshly created projects the uptime metric may take a while to be
+provisioned by Cloud Monitoring; if `terraform apply` fails creating the alert
+policy ("Cannot find metric(s)"), retry later — the uptime checks are already
+active.
+
+## Tooling
+
+- `./scripts/release.sh --dry-run` — preview the computed version and changelog
+  without committing or tagging.
+- `./scripts/rollback.sh <dv|qa|np|pd> <X.Y.Z>` — roll an environment to a
+  released image `app:X.Y.Z` and verify `/version`.
+- Terraform static checks run on PRs touching `infra/**`:
+  `terraform fmt -check -recursive` + `terraform validate` per stack
+  (no cloud credentials in CI; applies stay human-run).
+
 ## Branches
 
 | Branch       | Role                                    | Deployed to | Cloud Build trigger |
