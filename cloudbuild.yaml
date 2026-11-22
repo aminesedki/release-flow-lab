@@ -25,10 +25,13 @@ availableSecrets:
 steps:
   - name: python:3.12-slim
     entrypoint: bash
+    secretEnv: ['GITHUB_TOKEN']
     env:
       - '_ENV=${_ENV}'
       - '_REGION=${_REGION}'
       - 'COMMIT_SHA=${COMMIT_SHA}'
+      - 'BUILD_ID=${BUILD_ID}'
+      - 'PROJECT_ID=${PROJECT_ID}'
     args:
       - -c
       - 'python3 scripts/github_status.py start'
@@ -67,6 +70,8 @@ steps:
       - '_ENV=${_ENV}'
       - '_REGION=${_REGION}'
       - 'COMMIT_SHA=${COMMIT_SHA}'
+      - 'BUILD_ID=${BUILD_ID}'
+      - 'PROJECT_ID=${PROJECT_ID}'
     args:
       - -c
       - 'python3 scripts/github_status.py finish'
