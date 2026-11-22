@@ -68,6 +68,7 @@ resource "google_cloudbuild_trigger" "branch" {
 
   project         = each.value.project_id
   name            = "deploy-${var.app_name}-${each.key}"
+  description     = "Deploys ${var.app_name} to ${each.key} on each push to ${each.value.branch}"
   location        = var.region
   service_account = "projects/${each.value.project_id}/serviceAccounts/${local.app[each.key].build_sa}"
 
@@ -82,6 +83,9 @@ resource "google_cloudbuild_trigger" "branch" {
 
   filename = "cloudbuild.yaml"
 
+  # the build output shows on the commit check (logs + console link)
+  include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
+
   substitutions = {
     _ENV         = each.key
     _SERVICE     = local.app[each.key].service
@@ -90,6 +94,8 @@ resource "google_cloudbuild_trigger" "branch" {
     _RUNTIME_SA  = local.app[each.key].runtime_sa
     _LOGS_BUCKET = google_storage_bucket.cb_logs[each.key].url
   }
+
+  tags = ["cd", each.key]
 
   depends_on = [google_project_service.cloudbuild]
 }
@@ -100,6 +106,7 @@ resource "google_cloudbuild_trigger" "tags" {
 
   project         = each.value.project_id
   name            = "release-${var.app_name}-${each.key}"
+  description     = "Releases ${var.app_name} to ${each.key} on each semver tag"
   location        = var.region
   service_account = "projects/${each.value.project_id}/serviceAccounts/${local.app[each.key].build_sa}"
 
@@ -114,6 +121,9 @@ resource "google_cloudbuild_trigger" "tags" {
 
   filename = "cloudbuild.yaml"
 
+  # the build output shows on the commit check (logs + console link)
+  include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
+
   substitutions = {
     _ENV         = each.key
     _SERVICE     = local.app[each.key].service
@@ -122,6 +132,8 @@ resource "google_cloudbuild_trigger" "tags" {
     _RUNTIME_SA  = local.app[each.key].runtime_sa
     _LOGS_BUCKET = google_storage_bucket.cb_logs[each.key].url
   }
+
+  tags = ["cd", each.key]
 
   depends_on = [google_project_service.cloudbuild]
 }
@@ -139,23 +151,3 @@ resource "google_project_iam_member" "builds_viewer" {
 }
 
 # ------------------------------------------------------------------
-# Secret Manager: github-token secret (created out-of-band, one per env)
-# lets Cloud Build post check runs on GitHub commits
-# ------------------------------------------------------------------
-resource "google_project_service" "secretmanager" {
-  for_each = var.envs
-
-  project            = each.value.project_id
-  service            = "secretmanager.googleapis.com"
-  disable_on_destroy = false
-}
-
-resource "google_secret_manager_secret_iam_member" "github_token" {
-  for_each = var.envs
-
-  secret_id = "projects/${each.value.project_id}/secrets/github-token"
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${local.app[each.key].build_sa}"
-
-  depends_on = [google_project_service.secretmanager]
-}
