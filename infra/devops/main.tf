@@ -316,7 +316,7 @@ resource "google_monitoring_uptime_check_config" "env" {
 resource "google_monitoring_alert_policy" "env_uptime" {
   for_each = var.envs
 
-  project     = each.value.project_id
+  project      = each.value.project_id
   display_name = "release-flow-lab ${each.key}: service down"
   combiner     = "OR"
 
@@ -336,8 +336,8 @@ resource "google_monitoring_alert_policy" "env_uptime" {
 
   notification_channels = [google_monitoring_notification_channel.email[each.key].id]
   documentation {
-    content     = "The /health endpoint of release-flow-lab (${each.key}) is failing. Check the Cloud Run service: https://console.cloud.google.com/run/detail/europe-west9/release-flow-lab?project=${each.value.project_id}"
-    mime_type   = "text/markdown"
+    content   = "The /health endpoint of release-flow-lab (${each.key}) is failing. Check the Cloud Run service: https://console.cloud.google.com/run/detail/europe-west9/release-flow-lab?project=${each.value.project_id}"
+    mime_type = "text/markdown"
   }
 
   depends_on = [google_project_service.env_monitoring_api]
