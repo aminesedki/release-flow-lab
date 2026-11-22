@@ -17,3 +17,6 @@ echo "Building $VERSION for env $_ENV"
 
 docker build --build-arg APP_VERSION="$VERSION" -t "$IMAGE" .
 docker push "$IMAGE"
+
+# success marker consumed by scripts/github_status.py finish
+touch /workspace/docker.ok
