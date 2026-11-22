@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0] - 2026-11-22
+
+### Added
+
+- feat(ci): tag release images with their version
+- feat(ci): github deployments per env driven by cloud build checks
+
+### Fixed
+
+- fix(app): report service identity in health endpoint
+- fix(ci): read deploy urls from vars context
+- fix(ci): handle missing deployment in finish job
+- fix(ci): typed json for deployment auto_merge
+
+### Changed
+
+- test(app): match new health response contract
 ## [1.0.0] - 2026-11-22
 
 ### Added
