@@ -50,14 +50,14 @@ def post(state, desc):
 
 
 def build_info():
-    out = subprocess.run(
-        ["gcloud", "builds", "describe", os.environ["BUILD_ID"],
-         "--project", os.environ["PROJECT_ID"], "--region", region, "--format=json"],
-        capture_output=True, text=True).stdout
-    try:
-        return json.loads(out or "{}")
-    except Exception:
-        return {}
+    # step outcomes are communicated via marker files written by cb-build.sh
+    # and cb-deploy.sh (avoids needing gcloud/creds in the reporting step)
+    failed = []
+    if not os.path.exists("/workspace/docker.ok"):
+        failed.append("docker build")
+    if not os.path.exists("/workspace/deploy.ok"):
+        failed.append("deploy")
+    return failed
 
 
 def iso_z(s):
@@ -70,19 +70,20 @@ def iso_z(s):
 cmd = sys.argv[1] if len(sys.argv) > 1 else ""
 
 if cmd == "start":
+    with open("/workspace/ts", "w") as f:
+        f.write(str(int(datetime.now(timezone.utc).timestamp())))
     post("pending", "deploy running (Cloud Build)")
 
 elif cmd == "finish":
-    b = build_info()
-    steps = b.get("steps", [])
-    failed = [s.get("name", "?") for s in steps
-              if s.get("status") in ("FAILURE", "INTERNAL_ERROR", "TIMEOUT", "CANCELLED")]
-    start = iso_z(b.get("timing", {}).get("build", {}).get("startTime", ""))
-    if start:
-        d = int((datetime.now(timezone.utc) - start).total_seconds())
+    failed = build_info()
+    dur = "n/a"
+    try:
+        with open("/workspace/ts") as f:
+            start = int(f.read().strip())
+        d = max(0, int(datetime.now(timezone.utc).timestamp()) - start)
         dur = "%dm%02ds" % (d // 60, d % 60) if d >= 60 else "%ds" % d
-    else:
-        dur = "n/a"
+    except Exception:
+        pass
     if failed:
         post("failure", "Cloud Build FAILED (%s) in %s" % (", ".join(failed), dur))
     else:

@@ -125,3 +125,37 @@ resource "google_cloudbuild_trigger" "tags" {
 
   depends_on = [google_project_service.cloudbuild]
 }
+
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# GitHub Actions deploy-status reporter needs to read build status/logs
+# ------------------------------------------------------------------
+resource "google_project_iam_member" "builds_viewer" {
+  for_each = var.envs
+
+  project = each.value.project_id
+  role    = "roles/cloudbuild.builds.viewer"
+  member  = "serviceAccount:${local.app[each.key].build_sa}"
+}
+
+# ------------------------------------------------------------------
+# Secret Manager: github-token secret (created out-of-band, one per env)
+# lets Cloud Build post check runs on GitHub commits
+# ------------------------------------------------------------------
+resource "google_project_service" "secretmanager" {
+  for_each = var.envs
+
+  project            = each.value.project_id
+  service            = "secretmanager.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_secret_manager_secret_iam_member" "github_token" {
+  for_each = var.envs
+
+  secret_id = "projects/${each.value.project_id}/secrets/github-token"
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${local.app[each.key].build_sa}"
+
+  depends_on = [google_project_service.secretmanager]
+}
