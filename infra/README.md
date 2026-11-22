@@ -1,16 +1,28 @@
 # IaC layout
 
-Two independent Terraform stacks, one directory per environment:
+Two independent Terraform stacks, each applied **per environment** with its own
+state backend:
 
 ```
 infra/
-├── devops/                      # devops-owned resources
-│   ├── bootstrap/               # one-time: creates the state buckets
-│   ├── modules/devops/          # Cloud Build triggers + Cloud Build log bucket
-│   └── envs/{dv,qa,np,pd}/      # one stack per env, state in gs://<project>-tfstate-devops
-└── app/                         # application-owned resources
-    ├── modules/app/             # Cloud Run (FastAPI), Artifact Registry, service accounts
-    └── envs/{dv,qa,np,pd}/      # one stack per env, state in gs://<project>-tfstate-app
+├── devops/                          # devops-owned resources
+│   ├── provider.tf                  # provider + backend "gcs" {} (configured via envs/<env>/backend.tf)
+│   ├── variables.tf                 # region, app_name, github_*, envs (project_id, branch, watch_tags)
+│   ├── main.tf                      # Cloud Build API, log bucket, deploy/release triggers
+│   ├── outputs.tf
+│   ├── bootstrap/                   # one-time: creates the tfstate buckets (local state)
+│   └── envs/
+│       ├── dv/{backend.tf, terraform.tfvars}
+│       ├── qa/...
+│       ├── np/...
+│       └── pd/...
+└── app/                             # application-owned resources
+    ├── provider.tf
+    ├── variables.tf                 # region, app_name, envs (project_id)
+    ├── main.tf                      # APIs, Artifact Registry, service accounts + IAM, Cloud Run
+    ├── outputs.tf
+    └── envs/
+        └── (same structure)
 ```
 
 Per environment (`dv`, `qa`, `np`, `pd` = one dedicated GCP project each):
@@ -31,18 +43,24 @@ same environment.
 ```bash
 cd infra/devops/bootstrap
 terraform init
-terraform apply    # creates the 8 state buckets
+terraform apply -var='envs={dv="aminesedki-rf-dv",qa="aminesedki-rf-qa",np="aminesedki-rf-np",pd="aminesedki-rf-pd"}'
 ```
 
 ## Applying an environment
 
 ```bash
 # 1. app stack
-cd infra/app/envs/dv && terraform init && terraform apply
+cd infra/app
+terraform init -reconfigure -backend-config=envs/dv/backend.tf
+terraform apply -var-file=envs/dv/terraform.tfvars
 
 # 2. devops stack (same env)
-cd infra/devops/envs/dv && terraform init && terraform apply
+cd ../devops
+terraform init -reconfigure -backend-config=envs/dv/backend.tf
+terraform apply -var-file=envs/dv/terraform.tfvars
 ```
 
-Repeat per environment. The GitHub repository must be connected to each project
-via the Cloud Build GitHub App (console → Cloud Build → Triggers → Connect).
+Switching environment = re-init with the other env's backend config.
+
+The GitHub repository must be connected to each project via the Cloud Build
+GitHub App (console → Cloud Build → Triggers → Connect).
