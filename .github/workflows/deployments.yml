@@ -1,0 +1,88 @@
+name: Deployments
+
+# Creates a GitHub Deployment per environment on each push, and completes it
+# when the Cloud Build check run (deploy-*/release-*) finishes — so the
+# Deployments page shows dv/qa/np/pd with status, duration and "View deployment".
+
+on:
+  push:
+    branches: [rc/dv, rc/qa, rc/np, main]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  check_run:
+    types: [completed]
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  start:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Map ref to environment
+        id: env
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+          case "$REF_TYPE/$REF_NAME" in
+            branch/rc/dv) env=dv ;;
+            branch/rc/qa) env=qa ;;
+            branch/rc/np) env=np ;;
+            branch/main)  env=pd ;;
+            tag/*)        env=pd ;;
+            *) echo "::error::unexpected ref $REF_TYPE/$REF_NAME"; exit 1 ;;
+          esac
+          echo "env=$env" >> "$GITHUB_OUTPUT"
+
+      - name: Create deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENV_NAME: ${{ steps.env.outputs.env }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          existing=$(gh api "repos/${GITHUB_REPOSITORY}/deployments?sha=$SHA&environment=$ENV_NAME" --jq 'length')
+          if [[ $existing != 0 ]]; then
+            echo "deployment already exists for $ENV_NAME/$SHA"; exit 0
+          fi
+          did=$(gh api "repos/${GITHUB_REPOSITORY}/deployments" \
+            -f ref=$SHA -f environment=$ENV_NAME -f auto_merge=false \
+            -f description="Cloud Build deploy to $ENV_NAME" --jq '.id')
+          gh api "repos/${GITHUB_REPOSITORY}/deployments/$did/statuses" \
+            -f state=in_progress -f description="Cloud Build running"
+          echo "deployment $did created (in_progress) for $ENV_NAME"
+
+  finish:
+    if: github.event_name == 'check_run'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Complete deployment from check result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHECK_NAME: ${{ github.event.check_run.name }}
+          CHECK_SHA: ${{ github.event.check_run.head_sha }}
+          CONCLUSION: ${{ github.event.check_run.conclusion }}
+          DETAILS_URL: ${{ github.event.check_run.details_url }}
+        run: |
+          set -euo pipefail
+          if [[ ! $CHECK_NAME =~ ^(deploy|release)-release-flow-lab-(dv|qa|np|pd) ]]; then
+            echo "not a Cloud Build deploy check: $CHECK_NAME"; exit 0
+          fi
+          env=${BASH_REMATCH[2]}
+          url_var="DEPLOY_URL_${env^^}"
+          url=${!url_var}
+          state=success
+          [[ $CONCLUSION == success ]] || state=failure
+          did=$(gh api "repos/${GITHUB_REPOSITORY}/deployments?sha=$CHECK_SHA&environment=$env" --jq '.[0].id' || true)
+          if [[ -z $did ]]; then
+            echo "no deployment found for $env/$CHECK_SHA"; exit 0
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/deployments/$did/statuses" \
+            -f state=$state \
+            -f environment_url="$url" \
+            -f log_url="$DETAILS_URL" \
+            -f "description=Cloud Build: $CONCLUSION"
+          echo "deployment $did -> $state (env $env, url $url)"
