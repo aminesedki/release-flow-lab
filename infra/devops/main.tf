@@ -190,7 +190,7 @@ resource "google_cloudbuild_trigger" "branch" {
     _SERVICE       = local.app[each.key].service
     _PROJECT       = each.value.project_id
     _REGION        = var.region
-    _REGISTRY_HOST = "${each.value.project_id}-docker.pkg.dev/${each.value.project_id}"
+    _REGISTRY_HOST = "${var.region}-docker.pkg.dev/${each.value.project_id}"
     _REPO          = google_artifact_registry_repository.app[each.key].repository_id
     _RUNTIME_SA    = local.app[each.key].runtime_sa
     _LOGS_BUCKET   = google_storage_bucket.cb_logs.url
@@ -230,7 +230,7 @@ resource "google_cloudbuild_trigger" "tags" {
     _SERVICE       = local.app[each.key].service
     _PROJECT       = each.value.project_id
     _REGION        = var.region
-    _REGISTRY_HOST = "${each.value.project_id}-docker.pkg.dev/${each.value.project_id}"
+    _REGISTRY_HOST = "${var.region}-docker.pkg.dev/${each.value.project_id}"
     _REPO          = google_artifact_registry_repository.app[each.key].repository_id
     _RUNTIME_SA    = local.app[each.key].runtime_sa
     _LOGS_BUCKET   = google_storage_bucket.cb_logs.url
