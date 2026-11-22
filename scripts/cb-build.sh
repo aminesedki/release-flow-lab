@@ -19,3 +19,10 @@ echo "Building $VERSION for env $_ENV"
 docker build --build-arg APP_VERSION="$VERSION" -t "$IMAGE" . 2>&1 |
   sed -r 's/\x1B\[[0-9;]*[mK]//g'
 docker push "$IMAGE"
+
+# release builds also push the image under its version tag (rollback friendly)
+if [ -n "${TAG_NAME:-}" ]; then
+  VERSION_IMAGE="${IMAGE%:*}:$VERSION"
+  docker tag "$IMAGE" "$VERSION_IMAGE"
+  docker push "$VERSION_IMAGE"
+fi
