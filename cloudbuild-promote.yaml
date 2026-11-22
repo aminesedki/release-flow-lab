@@ -1,0 +1,25 @@
+# Cloud Build pipeline: PROMOTE the image that the previous environment is
+# currently serving (no rebuild - the validated artifact moves forward).
+# The trigger provides _ENV, _SERVICE, _PROJECT, _REGION, _RUNTIME_SA,
+# _SOURCE_ENV, _SOURCE_PROJECT, _LOGS_BUCKET (see infra/devops/main.tf).
+
+logsBucket: '${_LOGS_BUCKET}'
+
+options:
+  substitution_option: ALLOW_LOOSE
+  logging: GCS_ONLY
+
+steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    env:
+      - '_ENV=${_ENV}'
+      - '_SERVICE=${_SERVICE}'
+      - '_PROJECT=${_PROJECT}'
+      - '_REGION=${_REGION}'
+      - '_RUNTIME_SA=${_RUNTIME_SA}'
+      - '_SOURCE_ENV=${_SOURCE_ENV}'
+      - '_SOURCE_PROJECT=${_SOURCE_PROJECT}'
+      - 'BUILD_ID=${BUILD_ID}'
+    args:
+      - scripts/cb-promote.sh

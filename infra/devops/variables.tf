@@ -28,6 +28,12 @@ variable "github_repo" {
   default     = "release-flow-lab"
 }
 
+variable "alert_email" {
+  description = "Email address receiving the environment uptime alerts"
+  type        = string
+  default     = "aminesedki.dev@gmail.com"
+}
+
 variable "envs" {
   description = "Environments: one GCP project each, with the git branch that deploys to it"
   type = map(object({
@@ -35,5 +41,6 @@ variable "envs" {
     branch       = string
     watch_tags   = optional(bool, false)
     watch_branch = optional(bool, true)
+    promote_from = optional(string)
   }))
 }
