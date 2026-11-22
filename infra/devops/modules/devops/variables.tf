@@ -4,15 +4,9 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "Region for the environment resources"
+  description = "Region for the devops resources"
   type        = string
   default     = "europe-west9"
-}
-
-variable "app_name" {
-  description = "Application name used as resource prefix"
-  type        = string
-  default     = "release-flow-lab"
 }
 
 variable "env" {
@@ -23,6 +17,12 @@ variable "env" {
 variable "branch" {
   description = "Git branch whose push triggers a Cloud Build deploy to this environment"
   type        = string
+}
+
+variable "watch_tags" {
+  description = "Also trigger a Cloud Build deploy on semver tags vMAJOR.MINOR.PATCH (used for pd releases)"
+  type        = bool
+  default     = false
 }
 
 variable "github_owner" {
@@ -37,8 +37,12 @@ variable "github_repo" {
   default     = "release-flow-lab"
 }
 
-variable "watch_tags" {
-  description = "Also trigger a Cloud Build deploy on semver tags vMAJOR.MINOR.PATCH (used for pd releases)"
-  type        = bool
-  default     = false
+variable "app" {
+  description = "App resources provided by the app stack remote state"
+  type = object({
+    repo       = string
+    service    = string
+    build_sa   = string
+    runtime_sa = string
+  })
 }
