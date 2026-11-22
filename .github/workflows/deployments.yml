@@ -6,7 +6,7 @@ name: Deployments
 
 on:
   push:
-    branches: [rc/dv, rc/qa, rc/np, main]
+    branches: [rc/dv, rc/qa, rc/np]
     tags: ['v[0-9]+.[0-9]+.[0-9]+']
   check_run:
     types: [completed]
@@ -31,7 +31,6 @@ jobs:
             branch/rc/dv) env=dv ;;
             branch/rc/qa) env=qa ;;
             branch/rc/np) env=np ;;
-            branch/main)  env=pd ;;
             tag/*)        env=pd ;;
             *) echo "::error::unexpected ref $REF_TYPE/$REF_NAME"; exit 1 ;;
           esac
