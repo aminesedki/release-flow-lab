@@ -1,11 +1,15 @@
 # Cloud Build pipeline: build the FastAPI image and deploy it to one environment.
-# The trigger provides _ENV, _SERVICE, _REGION, _REPO, _RUNTIME_SA (see infra/main.tf).
-# The bash logic lives in scripts/cb-build.sh and scripts/cb-deploy.sh to keep
-# this YAML free of shell variables that Cloud Build would try to substitute.
+# The trigger provides _ENV, _SERVICE, _REGION, _REPO, _RUNTIME_SA, _LOGS_BUCKET
+# (see infra/devops/main.tf). Bash logic lives in scripts/cb-*.sh so this YAML
+# stays free of shell variables Cloud Build would try to substitute.
 #
 # Version resolution:
 #   - push on a release branch -> 0.0.0-dev.<short-sha>
 #   - push of a tag vMAJOR.MINOR.PATCH -> MAJOR.MINOR.PATCH
+#
+# GitHub reporting: a commit status "deploy/<env>" is set pending at start and
+# success/failure (with duration + console link) at the end. The docker and
+# deploy steps use allow_failure so the finalize step can still report failures.
 
 logsBucket: '${_LOGS_BUCKET}'
 
@@ -13,9 +17,28 @@ options:
   substitution_option: ALLOW_LOOSE
   logging: GCS_ONLY
 
+availableSecrets:
+  secretManager:
+    - versionName: projects/${PROJECT_NUMBER}/secrets/github-token/versions/latest
+      env: 'GITHUB_TOKEN'
+
 steps:
+  - name: python:3.12-slim
+    entrypoint: bash
+    secretEnv: ['GITHUB_TOKEN']
+    env:
+      - '_ENV=${_ENV}'
+      - '_REGION=${_REGION}'
+      - 'COMMIT_SHA=${COMMIT_SHA}'
+      - 'BUILD_ID=${BUILD_ID}'
+      - 'PROJECT_ID=${PROJECT_ID}'
+    args:
+      - -c
+      - 'python3 scripts/github_status.py start'
+
   - name: gcr.io/cloud-builders/docker
     entrypoint: bash
+    allowFailure: true
     env:
       - '_ENV=${_ENV}'
       - '_SERVICE=${_SERVICE}'
@@ -29,6 +52,7 @@ steps:
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: bash
+    allowFailure: true
     env:
       - '_ENV=${_ENV}'
       - '_SERVICE=${_SERVICE}'
@@ -38,3 +62,16 @@ steps:
       - 'PROJECT_ID=${PROJECT_ID}'
     args:
       - scripts/cb-deploy.sh
+
+  - name: python:3.12-slim
+    entrypoint: bash
+    secretEnv: ['GITHUB_TOKEN']
+    env:
+      - '_ENV=${_ENV}'
+      - '_REGION=${_REGION}'
+      - 'COMMIT_SHA=${COMMIT_SHA}'
+      - 'BUILD_ID=${BUILD_ID}'
+      - 'PROJECT_ID=${PROJECT_ID}'
+    args:
+      - -c
+      - 'python3 scripts/github_status.py finish'
