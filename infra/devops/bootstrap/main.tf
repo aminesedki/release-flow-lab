@@ -1,6 +1,5 @@
 # One-time bootstrap: creates the Terraform state buckets, one per stack and
-# per environment. Runs with a LOCAL state (this stack is applied once and its
-# state is not needed afterwards).
+# per environment. Runs with a LOCAL state (applied once, never re-applied).
 resource "google_storage_bucket" "tfstate" {
   for_each = {
     for pair in flatten([
@@ -18,7 +17,6 @@ resource "google_storage_bucket" "tfstate" {
 
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
-  force_destroy               = false
 
   versioning {
     enabled = true
