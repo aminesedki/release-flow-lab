@@ -112,11 +112,8 @@ resource "google_cloud_run_v2_service" "app" {
         container_port = 8000
       }
 
-      env {
-        name  = "APP_VERSION"
-        value = "bootstrap"
-      }
-
+      # APP_VERSION is baked into the image (ARG APP_VERSION) — do not
+      # override it here, or rollbacks would report the wrong version.
       resources {
         limits = {
           cpu    = "1"
@@ -124,6 +121,12 @@ resource "google_cloud_run_v2_service" "app" {
         }
       }
     }
+  }
+
+  # the image is managed by Cloud Build deploys — never reset it to the
+  # bootstrap image on terraform applies
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
   }
 
   depends_on = [google_project_service.run_api]
