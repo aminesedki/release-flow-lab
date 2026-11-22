@@ -48,9 +48,9 @@ jobs:
           if [[ $existing != 0 ]]; then
             echo "deployment already exists for $ENV_NAME/$SHA"; exit 0
           fi
-          did=$(gh api "repos/${GITHUB_REPOSITORY}/deployments" \
-            -F ref=$SHA -F environment=$ENV_NAME -F auto_merge=false -F 'required_contexts=[]' \
-            -f description="Cloud Build deploy to $ENV_NAME" --jq '.id')
+          payload=$(jq -n --arg sha "$SHA" --arg env "$ENV_NAME" \
+            '{ref: $sha, environment: $env, auto_merge: false, required_contexts: [], description: ("Cloud Build deploy to " + $env)}')
+          did=$(printf '%s' "$payload" | gh api "repos/${GITHUB_REPOSITORY}/deployments" --input - --jq '.id')
           gh api "repos/${GITHUB_REPOSITORY}/deployments/$did/statuses" \
             -f state=in_progress -f description="Cloud Build running"
           echo "deployment $did created (in_progress) for $ENV_NAME"
