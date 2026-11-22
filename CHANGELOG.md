@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.1] - 2026-11-22
+
+### Fixed
+
+- fix(app): include deployed version in greeting response
+
+### Changed
+
+- test(app): cover greeting endpoint
 ## [1.2.0] - 2026-11-22
 
 ### Added
