@@ -7,7 +7,12 @@ app = FastAPI(title="release-flow-lab")
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "service": os.getenv("HOSTNAME", "release-flow-lab")}
+
+
+@app.get("/greeting")
+def greeting() -> dict:
+    return {"greeting": "hello from release-flow-lab"}
 
 
 @app.get("/version")
