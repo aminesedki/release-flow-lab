@@ -53,6 +53,39 @@ The script:
 4. creates the GitHub Release with the changelog section as notes
 
 Tag push also triggers the **prod Cloud Build build** (`release-…-pd`),
-so `pd` runs the exact tagged version.
+so `pd` runs the exact tagged version. Prod deploys **tagged releases only**
+(no deploy on plain `main` pushes).
+
+## Hotfixes
+
+Bypass the rc chain for urgent fixes:
+
+1. `git switch -c hotfix/<ticket>-<desc> main`
+2. commit the fix (+ test updates), push, PR `hotfix/*` -> `main`
+   (the only allowed targets for `hotfix/*` are `main`)
+3. after CI passes and merge: `./scripts/release.sh` — the `fix:` commits
+   bump the **patch** version, tag and release to `pd`
+
+## Rollback
+
+Release images are pushed twice: `app:<short-sha>` and `app:<X.Y.Z>` (tag
+builds). `APP_VERSION` is baked into the image, so a rollback reports the
+rolled-back version.
+
+```bash
+# roll pd back to a previous release
+gcloud run deploy release-flow-lab \
+  --image europe-west9-docker.pkg.dev/aminesedki-rf-pd/release-flow-lab-images/app:X.Y.Z \
+  --project aminesedki-rf-pd --region europe-west9
+
+# list available versions
+gcloud artifacts docker images list \
+  europe-west9-docker.pkg.dev/aminesedki-rf-pd/release-flow-lab-images/app \
+  --include-tags --project aminesedki-rf-pd
+```
+
+Roll forward by re-deploying the newer `app:X.Y.Z` image. Note: never
+`terraform apply` the app stack to change images — Cloud Build owns them
+(terraform ignores the image field).
 
 - IaC applied: folder + 4 projects (dv/qa/np/pd), Cloud Run, Artifact Registry, Cloud Build triggers
