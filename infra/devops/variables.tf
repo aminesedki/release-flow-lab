@@ -1,5 +1,11 @@
+variable "devops_project_id" {
+  description = "Dedicated devops project hosting the state, triggers, build SAs and logs"
+  type        = string
+  default     = "aminesedki-rf-devops"
+}
+
 variable "region" {
-  description = "Region for all environments"
+  description = "Region for all resources"
   type        = string
   default     = "europe-west9"
 }
@@ -23,7 +29,7 @@ variable "github_repo" {
 }
 
 variable "envs" {
-  description = "Environments to manage. One entry per apply (each env has its own state)."
+  description = "Environments: one GCP project each, with the git branch that deploys to it"
   type = map(object({
     project_id   = string
     branch       = string

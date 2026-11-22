@@ -1,18 +1,23 @@
+devops_project_id = "aminesedki-rf-devops"
+
 envs = {
   dv = {
-    project_id = "aminesedki-rf-dv"
-    branch     = "rc/dv"
-    watch_tags = false
+    project_id   = "aminesedki-rf-dv"
+    branch       = "rc/dv"
+    watch_tags   = false
+    watch_branch = true
   }
   qa = {
-    project_id = "aminesedki-rf-qa"
-    branch     = "rc/qa"
-    watch_tags = false
+    project_id   = "aminesedki-rf-qa"
+    branch       = "rc/qa"
+    watch_tags   = false
+    watch_branch = true
   }
   np = {
-    project_id = "aminesedki-rf-np"
-    branch     = "rc/np"
-    watch_tags = false
+    project_id   = "aminesedki-rf-np"
+    branch       = "rc/np"
+    watch_tags   = false
+    watch_branch = true
   }
   pd = {
     project_id   = "aminesedki-rf-pd"

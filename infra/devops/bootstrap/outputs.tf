@@ -1,4 +1,7 @@
-output "state_buckets" {
-  description = "State bucket names per environment/stack"
-  value       = { for k, b in google_storage_bucket.tfstate : k => b.name }
+output "devops_project_id" {
+  value = google_project.devops.project_id
+}
+
+output "tfstate_bucket" {
+  value = google_storage_bucket.tfstate.name
 }
