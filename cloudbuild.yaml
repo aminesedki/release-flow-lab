@@ -21,6 +21,9 @@ steps:
       - '_SERVICE=${_SERVICE}'
       - '_REGION=${_REGION}'
       - '_REPO=${_REPO}'
+      - 'PROJECT_ID=${PROJECT_ID}'
+      - 'SHORT_SHA=${SHORT_SHA}'
+      - 'TAG_NAME=${TAG_NAME}'
     args:
       - scripts/cb-build.sh
 
@@ -32,5 +35,6 @@ steps:
       - '_REGION=${_REGION}'
       - '_REPO=${_REPO}'
       - '_RUNTIME_SA=${_RUNTIME_SA}'
+      - 'PROJECT_ID=${PROJECT_ID}'
     args:
       - scripts/cb-deploy.sh
