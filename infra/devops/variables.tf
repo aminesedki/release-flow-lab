@@ -25,8 +25,9 @@ variable "github_repo" {
 variable "envs" {
   description = "Environments to manage. One entry per apply (each env has its own state)."
   type = map(object({
-    project_id = string
-    branch     = string
-    watch_tags = optional(bool, false)
+    project_id   = string
+    branch       = string
+    watch_tags   = optional(bool, false)
+    watch_branch = optional(bool, true)
   }))
 }
