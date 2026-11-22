@@ -133,6 +133,15 @@ resource "google_project_iam_member" "build_run_admin" {
   member  = "serviceAccount:${google_service_account.build[each.key].email}"
 }
 
+# Promoting builds read the image currently serving the source environment
+resource "google_project_iam_member" "build_source_viewer" {
+  for_each = { for env, e in var.envs : env => e if e.promote_from != null }
+
+  project = var.envs[each.value.promote_from].project_id
+  role    = "roles/run.viewer"
+  member  = "serviceAccount:${google_service_account.build[each.key].email}"
+}
+
 # gcloud calls of the build are billed to the env project
 resource "google_project_iam_member" "build_quota" {
   for_each = var.envs
@@ -160,6 +169,46 @@ resource "google_service_account_iam_member" "build_actas_runtime" {
   service_account_id = "projects/${each.value.project_id}/serviceAccounts/${local.app[each.key].runtime_sa}"
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.build[each.key].email}"
+}
+
+data "google_project" "envs" {
+  for_each = var.envs
+
+  project_id = each.value.project_id
+}
+
+# Cross-project image deploy: the Cloud Run service agent of the target env
+# pulls the image from the source env registry (see run docs "other projects")
+resource "google_artifact_registry_repository_iam_member" "promote_service_agent_reader" {
+  for_each = { for env, e in var.envs : env => e if e.promote_from != null }
+
+  project    = var.envs[each.value.promote_from].project_id
+  location   = var.region
+  repository = google_artifact_registry_repository.app[each.value.promote_from].repository_id
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:service-${data.google_project.envs[each.key].number}@serverless-robot-prod.iam.gserviceaccount.com"
+}
+
+# The service's runtime SA also pulls the image on container start
+resource "google_artifact_registry_repository_iam_member" "promote_runtime_reader" {
+  for_each = { for env, e in var.envs : env => e if e.promote_from != null }
+
+  project    = var.envs[each.value.promote_from].project_id
+  location   = var.region
+  repository = google_artifact_registry_repository.app[each.value.promote_from].repository_id
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${local.app[each.key].runtime_sa}"
+}
+
+# Promoting builds pull the image from the source environment's registry
+resource "google_artifact_registry_repository_iam_member" "promote_source_reader" {
+  for_each = { for env, e in var.envs : env => e if e.promote_from != null }
+
+  project    = var.envs[each.value.promote_from].project_id
+  location   = var.region
+  repository = google_artifact_registry_repository.app[each.value.promote_from].repository_id
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.build[each.key].email}"
 }
 
 # The env runtime SA pulls images from its registry
