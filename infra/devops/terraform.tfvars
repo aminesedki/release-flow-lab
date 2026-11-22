@@ -15,8 +15,9 @@ envs = {
     watch_tags = false
   }
   pd = {
-    project_id = "aminesedki-rf-pd"
-    branch     = "main"
-    watch_tags = true
+    project_id   = "aminesedki-rf-pd"
+    branch       = "main"
+    watch_tags   = true
+    watch_branch = false
   }
 }

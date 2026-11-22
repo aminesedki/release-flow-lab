@@ -64,7 +64,8 @@ resource "google_storage_bucket_iam_member" "cb_logs" {
 # Cloud Build trigger: deploy on push to the environment branch
 # ------------------------------------------------------------------
 resource "google_cloudbuild_trigger" "branch" {
-  for_each = var.envs
+  # pd (prod) deploys only tagged releases: watch_branch = false there
+  for_each = { for env, e in var.envs : env => e if e.watch_branch }
 
   project         = each.value.project_id
   name            = "deploy-${var.app_name}-${each.key}"
