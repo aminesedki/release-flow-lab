@@ -13,6 +13,3 @@ gcloud run deploy "$_SERVICE" \
   --update-env-vars "APP_VERSION=$VERSION" \
   --allow-unauthenticated \
   --quiet
-
-# success marker consumed by scripts/github_status.py finish
-touch /workspace/deploy.ok
