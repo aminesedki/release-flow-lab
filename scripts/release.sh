@@ -8,6 +8,12 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
+DRY_RUN=0
+if [[ ${1:-} == "--dry-run" ]]; then
+  DRY_RUN=1
+  shift
+fi
+
 branch=$(git rev-parse --abbrev-ref HEAD)
 [[ $branch == "main" ]] || { echo "error: run this on main (current: $branch)"; exit 1; }
 git fetch --tags --force --quiet
@@ -93,6 +99,15 @@ changelog=$(mktemp)
   fi
 } > "$changelog"
 mv "$changelog" CHANGELOG.md
+
+if (( DRY_RUN )); then
+  echo "--- DRY RUN: would release $tag with this changelog section ---"
+  cat "$notes_file"
+  echo "--- DRY RUN: no files changed, no tag created ---"
+  rm -f "$notes_file" "$changelog" 2>/dev/null || true
+  git checkout -- CHANGELOG.md pyproject.toml 2>/dev/null || true
+  exit 0
+fi
 
 git add CHANGELOG.md pyproject.toml uv.lock
 git commit -m "chore(release): $tag"
