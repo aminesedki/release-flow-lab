@@ -72,8 +72,12 @@ jobs:
             echo "not a Cloud Build deploy check: $CHECK_NAME"; exit 0
           fi
           env=${BASH_REMATCH[2]}
-          url_var="DEPLOY_URL_${env^^}"
-          url=${!url_var}
+          case $env in
+            dv) url=${{ vars.DEPLOY_URL_DV }} ;;
+            qa) url=${{ vars.DEPLOY_URL_QA }} ;;
+            np) url=${{ vars.DEPLOY_URL_NP }} ;;
+            pd) url=${{ vars.DEPLOY_URL_PD }} ;;
+          esac
           state=success
           [[ $CONCLUSION == success ]] || state=failure
           did=$(gh api "repos/${GITHUB_REPOSITORY}/deployments?sha=$CHECK_SHA&environment=$env" --jq '.[0].id // empty' || true)
