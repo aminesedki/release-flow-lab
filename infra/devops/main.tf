@@ -372,13 +372,13 @@ resource "google_monitoring_alert_policy" "env_uptime" {
   conditions {
     display_name = "Uptime check failing for 5 minutes"
     condition_threshold {
-      filter          = "metric.type=\"monitoring.googleapis.com/v3/uptime_check_metrics/check_passed\" AND resource.type=\"uptime_url\""
+      filter          = "metric.type=\"monitoring.googleapis.com/uptime_check/check_passed\" AND resource.type=\"uptime_url\" AND resource.label.host=\"${local.run_hosts[each.key]}\""
       comparison      = "COMPARISON_LT"
       threshold_value = 0.99
       duration        = "300s"
       aggregations {
         alignment_period   = "300s"
-        per_series_aligner = "ALIGN_MEAN"
+        per_series_aligner = "ALIGN_FRACTION_TRUE"
       }
     }
   }
