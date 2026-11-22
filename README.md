@@ -10,7 +10,7 @@ The FastAPI app exposes:
 |---|---|
 | `GET /health` | Health check and service identity |
 | `GET /version` | Version baked into the deployed image |
-| `GET /greeting` | Example feature endpoint, including the deployed version |
+| `GET /greeting` | Example greeting endpoint |
 
 ### Run locally
 
@@ -38,6 +38,7 @@ uv run pytest -q
 Build the container locally with:
 
 ```bash
+docker build --build-arg APP_VERSION=local -t release-flow-lab:local .
 docker run --rm -p 8000:8000 release-flow-lab:local
 ```
 
@@ -62,6 +63,7 @@ Every change enters through a PR. The CI checks enforce branch direction, conven
 Release from a clean, up-to-date `main` branch:
 
 ```bash
+./scripts/release.sh --dry-run  # preview without changing files
 ./scripts/release.sh          # calculate the next SemVer version
 ./scripts/release.sh 1.3.0    # or specify a version explicitly
 ```
@@ -72,9 +74,11 @@ For urgent production fixes, branch from `main` as `hotfix/<ticket>-<desc>`, PR 
 
 ### Build and deployment visibility
 
-Cloud Build runs in the dedicated `aminesedki-rf-devops` project. It builds the image, pushes it to the target environment's Artifact Registry, and deploys it to that environment's Cloud Run service. Production builds are triggered by release tags only.
+Cloud Build runs in the dedicated `aminesedki-rf-devops` project. The dv trigger builds and pushes the image once; qa and np promote the image currently serving the previous environment without rebuilding it. A `vX.Y.Z` tag builds the production release image and deploys it to pd. Every deployment runs smoke checks against `/health` and `/version`.
 
 Each build appears as a native GitHub check run with status, start/end times, build-log output and a Cloud Build console link. The GitHub Deployments page records the environment, deployment status, live service URL and build link. Release images are tagged `app:X.Y.Z` to support rollbacks.
+
+Cloud Monitoring checks `/health` every minute from three regions and emails the configured address if an environment is down for five minutes. Artifact Analysis vulnerability scanning is enabled for pushed images.
 
 ## Infrastructure
 
