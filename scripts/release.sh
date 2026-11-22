@@ -74,6 +74,15 @@ notes_file=$(mktemp)
 # --- update files -------------------------------------------------------------------
 sed -i "s/^version = \".*\"/version = \"$version\"/" pyproject.toml
 
+# keep uv.lock in sync with the new pyproject version (--locked builds fail otherwise)
+if command -v uv >/dev/null 2>&1; then
+  uv lock
+elif python3 -m uv --version >/dev/null 2>&1; then
+  python3 -m uv lock
+else
+  echo "error: uv is required to update uv.lock"; exit 1
+fi
+
 changelog=$(mktemp)
 {
   echo "# Changelog"
@@ -85,7 +94,7 @@ changelog=$(mktemp)
 } > "$changelog"
 mv "$changelog" CHANGELOG.md
 
-git add CHANGELOG.md pyproject.toml
+git add CHANGELOG.md pyproject.toml uv.lock
 git commit -m "chore(release): $tag"
 
 # --- tag, push, GitHub release --------------------------------------------------------
