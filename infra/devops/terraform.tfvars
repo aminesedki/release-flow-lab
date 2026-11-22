@@ -12,12 +12,14 @@ envs = {
     branch       = "rc/qa"
     watch_tags   = false
     watch_branch = true
+    promote_from = "dv"
   }
   np = {
     project_id   = "aminesedki-rf-np"
     branch       = "rc/np"
     watch_tags   = false
     watch_branch = true
+    promote_from = "qa"
   }
   pd = {
     project_id   = "aminesedki-rf-pd"

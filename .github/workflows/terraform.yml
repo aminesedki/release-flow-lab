@@ -1,0 +1,37 @@
+name: Terraform checks
+
+# Static checks for the infra stacks on PRs and rc/dv pushes.
+# terraform plan is not run here (no cloud credentials in CI by design);
+# apply remains a human-run operation (see infra/README.md).
+
+on:
+  pull_request:
+    paths: ['infra/**']
+  push:
+    branches: [rc/dv]
+    paths: ['infra/**']
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+      - name: terraform fmt
+        run: terraform -chdir=infra fmt -check -recursive
+
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack: [app, devops]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+      - name: terraform validate (infra/${{ matrix.stack }})
+        run: |
+          terraform -chdir=infra/${{ matrix.stack }} init -backend=false
+          terraform -chdir=infra/${{ matrix.stack }} validate
