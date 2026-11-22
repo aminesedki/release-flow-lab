@@ -7,8 +7,10 @@ IMAGE=$(cat /workspace/image.env)
 # APP_VERSION is baked into the image at build time (ARG APP_VERSION in the
 # Dockerfile) — no service-level env override, so rollbacks report the image's
 # own version.
+export CLOUDSDK_BILLING_QUOTA_PROJECT="$_PROJECT"
+
 gcloud run deploy "$_SERVICE" \
-  --project "$PROJECT_ID" \
+  --project "$_PROJECT" \
   --image "$IMAGE" \
   --region "$_REGION" \
   --service-account "$_RUNTIME_SA" \
