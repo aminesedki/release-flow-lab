@@ -54,3 +54,5 @@ The script:
 
 Tag push also triggers the **prod Cloud Build build** (`release-…-pd`),
 so `pd` runs the exact tagged version.
+
+- IaC applied: folder + 4 projects (dv/qa/np/pd), Cloud Run, Artifact Registry, Cloud Build triggers
