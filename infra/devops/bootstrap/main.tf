@@ -1,19 +1,19 @@
-# One-time bootstrap: creates the Terraform state buckets, one per stack and
-# per environment. Runs with a LOCAL state (applied once, never re-applied).
-resource "google_storage_bucket" "tfstate" {
-  for_each = {
-    for pair in flatten([
-      for env, project_id in var.envs : [
-        { env = env, stack = "devops", project_id = project_id },
-        { env = env, stack = "app", project_id = project_id },
-      ]
-    ]) : "${pair.env}-${pair.stack}" => pair
-  }
+# One-time bootstrap (local state):
+#  - the dedicated devops project (states, registry management, Cloud Build)
+#  - the central state bucket in it
+# The legacy per-env buckets stay as backups of the migrated states.
+resource "google_project" "devops" {
+  name            = "${var.app_name}-devops"
+  project_id      = var.devops_project_id
+  billing_account = var.billing_account
+  org_id          = var.org_id
+  deletion_policy = "ABANDON"
+}
 
-  name          = "${each.value.project_id}-tfstate-${each.value.stack}"
-  project       = each.value.project_id
-  location      = var.region
-  storage_class = "STANDARD"
+resource "google_storage_bucket" "tfstate" {
+  name     = "${var.devops_project_id}-tfstate"
+  project  = google_project.devops.project_id
+  location = var.region
 
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"

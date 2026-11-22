@@ -10,7 +10,7 @@ else
   VERSION="0.0.0-dev.${SHORT_SHA}"
 fi
 
-IMAGE="$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/app:$SHORT_SHA"
+IMAGE="$_REGISTRY_HOST/$_REPO/app:$SHORT_SHA"
 
 echo "$VERSION" > /workspace/build.env
 echo "$IMAGE" > /workspace/image.env

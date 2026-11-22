@@ -10,7 +10,7 @@ terraform {
 
   # devops is a single state managing all four environments
   backend "gcs" {
-    bucket = "aminesedki-rf-pd-tfstate-devops"
+    bucket = "aminesedki-rf-devops-tfstate"
     prefix = "devops"
   }
 }
