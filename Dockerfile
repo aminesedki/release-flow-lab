@@ -3,6 +3,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/
 
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+# keep build logs readable (no ANSI escapes in Cloud Build / GitHub output)
+ENV NO_COLOR=1
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev

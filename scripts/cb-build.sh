@@ -2,6 +2,7 @@
 # Cloud Build step 1: resolve the version, build and push the image.
 # Built-ins (PROJECT_ID, SHORT_SHA, TAG_NAME) are env vars in the step.
 set -euxo pipefail
+export NO_COLOR=1
 
 if [ -n "${TAG_NAME:-}" ]; then
   VERSION="${TAG_NAME#v}"
