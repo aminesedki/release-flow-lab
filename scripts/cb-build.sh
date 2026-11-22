@@ -2,6 +2,7 @@
 # Cloud Build step 1: resolve the version, build and push the image.
 # Built-ins (PROJECT_ID, SHORT_SHA, TAG_NAME) are env vars in the step.
 set -euxo pipefail
+export NO_COLOR=1
 
 if [ -n "${TAG_NAME:-}" ]; then
   VERSION="${TAG_NAME#v}"
@@ -15,8 +16,6 @@ echo "$VERSION" > /workspace/build.env
 echo "$IMAGE" > /workspace/image.env
 echo "Building $VERSION for env $_ENV"
 
-docker build --build-arg APP_VERSION="$VERSION" -t "$IMAGE" .
+docker build --build-arg APP_VERSION="$VERSION" -t "$IMAGE" . 2>&1 |
+  sed -r 's/\x1B\[[0-9;]*[mK]//g'
 docker push "$IMAGE"
-
-# success marker consumed by scripts/github_status.py finish
-touch /workspace/docker.ok
