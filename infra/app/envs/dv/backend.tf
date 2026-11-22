@@ -1,2 +1,2 @@
-bucket = "aminesedki-rf-dv-tfstate-app"
-prefix = "app"
+bucket = "aminesedki-rf-devops-tfstate"
+prefix = "app/dv"
