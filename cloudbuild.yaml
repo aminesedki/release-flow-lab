@@ -1,50 +1,40 @@
 # Cloud Build pipeline: build the FastAPI image and deploy it to one environment.
 # The trigger provides _ENV, _SERVICE, _REGION, _REPO, _RUNTIME_SA (see infra/main.tf).
+# The bash logic lives in scripts/cb-build.sh and scripts/cb-deploy.sh to keep
+# this YAML free of shell variables that Cloud Build would try to substitute.
 #
 # Version resolution:
 #   - push on a release branch -> 0.0.0-dev.<short-sha>
 #   - push of a tag vMAJOR.MINOR.PATCH -> MAJOR.MINOR.PATCH
 
+logsBucket: '${_LOGS_BUCKET}'
+
 options:
   substitution_option: ALLOW_LOOSE
-  logging: CLOUD_LOGGING
+  logging: GCS_ONLY
 
 steps:
-  - name: ubuntu
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        if [ -n "$TAG_NAME" ]; then
-          VERSION="${TAG_NAME#v}"
-        else
-          VERSION="0.0.0-dev.$SHORT_SHA"
-        fi
-        echo "APP_VERSION=$VERSION" > /workspace/build.env
-        echo "IMAGE=$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/app:$SHORT_SHA" >> /workspace/build.env
-        echo "Building $VERSION (env $_ENV)"
-
   - name: gcr.io/cloud-builders/docker
     entrypoint: bash
+    env:
+      - '_ENV=${_ENV}'
+      - '_SERVICE=${_SERVICE}'
+      - '_REGION=${_REGION}'
+      - '_REPO=${_REPO}'
+      - 'PROJECT_ID=${PROJECT_ID}'
+      - 'SHORT_SHA=${SHORT_SHA}'
+      - 'TAG_NAME=${TAG_NAME}'
     args:
-      - -c
-      - |
-        set -euxo pipefail
-        source /workspace/build.env
-        docker build --build-arg APP_VERSION="$APP_VERSION" -t "$IMAGE" .
-        docker push "$IMAGE"
+      - scripts/cb-build.sh
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: bash
+    env:
+      - '_ENV=${_ENV}'
+      - '_SERVICE=${_SERVICE}'
+      - '_REGION=${_REGION}'
+      - '_REPO=${_REPO}'
+      - '_RUNTIME_SA=${_RUNTIME_SA}'
+      - 'PROJECT_ID=${PROJECT_ID}'
     args:
-      - -c
-      - |
-        set -euxo pipefail
-        source /workspace/build.env
-        gcloud run deploy "$_SERVICE" \
-          --project "$PROJECT_ID" \
-          --image "$IMAGE" \
-          --region "$_REGION" \
-          --service-account "$_RUNTIME_SA" \
-          --allow-unauthenticated \
-          --quiet
+      - scripts/cb-deploy.sh
