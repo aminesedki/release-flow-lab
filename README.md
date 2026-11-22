@@ -76,7 +76,7 @@ For urgent production fixes, branch from `main` as `hotfix/<ticket>-<desc>`, PR 
 
 Cloud Build runs in the dedicated `aminesedki-rf-devops` project. The dv trigger builds and pushes the image once; qa and np promote the image currently serving the previous environment without rebuilding it. A `vX.Y.Z` tag builds the production release image and deploys it to pd. Every deployment runs smoke checks against `/health` and `/version`.
 
-Each build appears as a native GitHub check run with status, start/end times, build-log output and a Cloud Build console link. The GitHub Deployments page records the environment, deployment status, live service URL and build link. Release images are tagged `app:X.Y.Z` to support rollbacks.
+Each build appears as a native GitHub check run with status, start/end times, build-log output and a Cloud Build console link. The GitHub Deployments page records rc environment pushes and pd version-tag releases with status, live service URL and build link. Release images are tagged `app:X.Y.Z` to support rollbacks.
 
 Cloud Monitoring checks `/health` every minute from three regions and emails the configured address if an environment is down for five minutes. Artifact Analysis vulnerability scanning is enabled for pushed images.
 
