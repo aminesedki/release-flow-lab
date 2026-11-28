@@ -1,2 +1,2 @@
-bucket = "aminesedki-rf-devops-tfstate"
+bucket = "aminesedki-rf2-devops-tfstate"
 prefix = "app/qa"

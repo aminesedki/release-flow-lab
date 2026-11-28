@@ -9,7 +9,7 @@ version=${2:-}
 version=${version#v}
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "error: version must be MAJOR.MINOR.PATCH"; exit 1; }
 
-project="aminesedki-rf-$env"
+project="aminesedki-rf2-$env"
 region="europe-west9"
 repo="$region-docker.pkg.dev/$project/release-flow-lab-images/app"
 url=$(gcloud run services describe release-flow-lab --project "$project" --region "$region" --format 'value(status.url)')

@@ -1,7 +1,7 @@
 module "app" {
   source = "../../modules/app"
 
-  project_id = "aminesedki-rf-dv"
+  project_id = "aminesedki-rf2-dv"
   region     = "europe-west9"
   env        = "dv"
 }

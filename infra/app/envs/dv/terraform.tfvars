@@ -1,3 +1,3 @@
 envs = {
-  dv = { project_id = "aminesedki-rf-dv" }
+  dv = { project_id = "aminesedki-rf2-dv" }
 }
