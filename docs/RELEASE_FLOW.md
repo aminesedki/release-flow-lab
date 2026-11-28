@@ -112,13 +112,13 @@ rolled-back version.
 ```bash
 # roll pd back to a previous release
 gcloud run deploy release-flow-lab \
-  --image europe-west9-docker.pkg.dev/aminesedki-rf-pd/release-flow-lab-images/app:X.Y.Z \
-  --project aminesedki-rf-pd --region europe-west9
+  --image europe-west9-docker.pkg.dev/aminesedki-rf2-pd/release-flow-lab-images/app:X.Y.Z \
+  --project aminesedki-rf2-pd --region europe-west9
 
 # list available versions
 gcloud artifacts docker images list \
-  europe-west9-docker.pkg.dev/aminesedki-rf-pd/release-flow-lab-images/app \
-  --include-tags --project aminesedki-rf-pd
+  europe-west9-docker.pkg.dev/aminesedki-rf2-pd/release-flow-lab-images/app \
+  --include-tags --project aminesedki-rf2-pd
 ```
 
 Roll forward by re-deploying the newer `app:X.Y.Z` image. Never
