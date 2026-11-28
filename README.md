@@ -53,10 +53,10 @@ hotfix/* ---------------------------------------------------------------------> 
 
 | Environment | Project | Deploy source |
 |---|---|---|
-| `dv` | `aminesedki-rf-dv` | push to `rc/dv` |
-| `qa` | `aminesedki-rf-qa` | push to `rc/qa` |
-| `np` | `aminesedki-rf-np` | push to `rc/np` |
-| `pd` | `aminesedki-rf-pd` | SemVer tag `vMAJOR.MINOR.PATCH` only |
+| `dv` | `aminesedki-rf2-dv` | push to `rc/dv` |
+| `qa` | `aminesedki-rf2-qa` | push to `rc/qa` |
+| `np` | `aminesedki-rf2-np` | push to `rc/np` |
+| `pd` | `aminesedki-rf2-pd` | SemVer tag `vMAJOR.MINOR.PATCH` only |
 
 Every change enters through a PR. The CI checks enforce branch direction, conventional PR titles and tests. The promotion branches only accept their predecessor (`rc/dv` to `rc/qa`, `rc/qa` to `rc/np`, `rc/np` to `main`). `hotfix/*` may target `main` for urgent fixes.
 
@@ -74,7 +74,7 @@ For urgent production fixes, branch from `main` as `hotfix/<ticket>-<desc>`, PR 
 
 ### Build and deployment visibility
 
-Cloud Build runs in the dedicated `aminesedki-rf-devops` project. The dv trigger builds and pushes the image once; qa and np promote the image currently serving the previous environment without rebuilding it. A `vX.Y.Z` tag builds the production release image and deploys it to pd. Every deployment runs smoke checks against `/health` and `/version`.
+Cloud Build runs in the dedicated `aminesedki-rf2-devops` project. The dv trigger builds and pushes the image once; qa and np promote the image currently serving the previous environment without rebuilding it. A `vX.Y.Z` tag builds the production release image and deploys it to pd. Every deployment runs smoke checks against `/health` and `/version`.
 
 Each build appears as a native GitHub check run with status, start/end times, build-log output and a Cloud Build console link. The GitHub Deployments page records rc environment pushes and pd version-tag releases with status, live service URL and build link. Release images are tagged `app:X.Y.Z` to support rollbacks.
 
