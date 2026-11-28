@@ -1,7 +1,7 @@
 variable "devops_project_id" {
   description = "Dedicated devops project hosting the state, triggers, build SAs and logs"
   type        = string
-  default     = "aminesedki-rf-devops"
+  default     = "aminesedki-rf2-devops"
 }
 
 variable "region" {
